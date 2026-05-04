@@ -2060,7 +2060,7 @@ def _default_spawn(task: Task, workspace: str) -> Optional[int]:
     via the ``complete`` / ``block`` transitions the worker writes itself;
     the PID check is a safety net for crashes, OOM kills, and Ctrl+C.
     """
-    import subprocess
+    import shutil, subprocess
     if not task.assignee:
         raise ValueError(f"task {task.id} has no assignee")
 
@@ -2076,8 +2076,14 @@ def _default_spawn(task: Task, workspace: str) -> Optional[int]:
     # attributed correctly regardless of how the child loads config.
     env["HERMES_PROFILE"] = task.assignee
 
+    hermes_bin = shutil.which("hermes")
+    if not hermes_bin:
+        raise RuntimeError(
+            "`hermes` executable not found on PATH. "
+            "Install Hermes Agent or activate its venv before running the kanban dispatcher."
+        )
     cmd = [
-        "hermes",
+        hermes_bin,
         "-p", task.assignee,
         # Auto-load the kanban-worker skill so every dispatched worker
         # has the pattern library (good summary/metadata shapes, retry
